@@ -1,0 +1,4 @@
+P4PORT=ssl:192.168.1.226:1666
+P4USER=tomneo2004
+P4CLIENT=OSSSteamPlugin
+P4IGNORE=.p4ignore.txt;.gitignore
