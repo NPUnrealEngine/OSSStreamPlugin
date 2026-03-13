@@ -1,0 +1,11 @@
+.vscode/*
+.vs/*
+Content/*
+DerivedDataCache/*
+Intermediate/*
+Saved/*
+Binaries/*
+Assets/*
+.idea/
+*.sln
+.vsconfig

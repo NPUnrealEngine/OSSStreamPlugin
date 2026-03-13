@@ -1,0 +1,28 @@
+*.swp
+*~
+# no tmp directory
+tmp
+.DS_Store
+
+# User-specific folders
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+FileOpenOrder/
+.vs/
+.idea/
+obj/
+.git/
+
+
+# User-specific files
+*.sln
+*.sdf
+*.suo
+*.log
+*.pdb
+*.vsconfig
+*.-Debug.*
+.gitignore
