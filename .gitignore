@@ -9,3 +9,4 @@ Assets/*
 .idea/
 *.sln
 .vsconfig
+Build/
