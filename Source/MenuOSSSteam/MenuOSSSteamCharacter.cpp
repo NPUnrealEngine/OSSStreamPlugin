@@ -12,10 +12,12 @@
 #include "InputActionValue.h"
 #include "MenuOSSSteam.h"
 #include "Online.h"
+#include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 
-AMenuOSSSteamCharacter::AMenuOSSSteamCharacter()
+AMenuOSSSteamCharacter::AMenuOSSSteamCharacter():
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -61,7 +63,7 @@ AMenuOSSSteamCharacter::AMenuOSSSteamCharacter()
 			GEngine->AddOnScreenDebugMessage(
 				-1,
 				15.f,
-				FColor::Red,
+				FColor::Cyan,
 				FString::Printf(TEXT("Found subsystem: %s"), *OnlineSubsystem->GetSubsystemName().ToString())
 			);
 		}
@@ -148,4 +150,65 @@ void AMenuOSSSteamCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void AMenuOSSSteamCharacter::CreateGameSession()
+{
+	if (!OnlineSessionInterface.IsValid()) return;
+	
+	/* If the game session exists then destroy it */
+	FNamedOnlineSession* ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
+	if (ExistingSession != nullptr)
+	{
+		OnlineSessionInterface->DestroySession(NAME_GameSession);	
+	}
+	
+	/* Listen for create session complete event */
+	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
+	
+	/* Create a game session */
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+	
+	SessionSettings->bIsLANMatch = false;
+	SessionSettings->NumPublicConnections = 4;
+	SessionSettings->bAllowJoinInProgress = true;
+	SessionSettings->bAllowJoinViaPresence = true;
+	SessionSettings->bShouldAdvertise = true;
+	SessionSettings->bUsesPresence = true;
+	SessionSettings->bUseLobbiesIfAvailable = true;
+	
+	OnlineSessionInterface->CreateSession(
+		*LocalPlayer->GetPreferredUniqueNetId(),
+		NAME_GameSession,
+		*SessionSettings
+	);
+}
+
+void AMenuOSSSteamCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Green,
+				FString::Printf(TEXT("Create game session %s successful "), *SessionName.ToString())
+			);
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Red,
+				FString::Printf(TEXT("Failed to create game session %s "), *SessionName.ToString())
+			);
+		}	
+	}
 }
