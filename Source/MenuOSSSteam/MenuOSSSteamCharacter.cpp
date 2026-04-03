@@ -15,9 +15,11 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
+#include "Online/OnlineSessionNames.h"
 
 AMenuOSSSteamCharacter::AMenuOSSSteamCharacter():
-	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete))
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -185,6 +187,24 @@ void AMenuOSSSteamCharacter::CreateGameSession()
 	);
 }
 
+void AMenuOSSSteamCharacter::JoinGameSession()
+{
+	if (!OnlineSessionInterface.IsValid()) return;
+	
+	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
+	
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	SessionSearch->MaxSearchResults = 10000;
+	SessionSearch->bIsLanQuery = false;
+	SessionSearch->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
+	
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	OnlineSessionInterface->FindSessions(
+		*LocalPlayer->GetPreferredUniqueNetId(),
+		SessionSearch.ToSharedRef()
+	);
+}
+
 void AMenuOSSSteamCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
 	if (bWasSuccessful)
@@ -210,5 +230,23 @@ void AMenuOSSSteamCharacter::OnCreateSessionComplete(FName SessionName, bool bWa
 				FString::Printf(TEXT("Failed to create game session %s "), *SessionName.ToString())
 			);
 		}	
+	}
+}
+
+void AMenuOSSSteamCharacter::OnFindSessionComplete(bool bWasSuccessful)
+{
+	for (FOnlineSessionSearchResult& Result : SessionSearch->SearchResults)
+	{
+		FString Id = Result.GetSessionIdStr();
+		FString Username = Result.Session.OwningUserName;
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Cyan,
+				FString::Printf(TEXT("ID: %s, User: %s"), *Id, *Username)
+			);
+		}
 	}
 }
