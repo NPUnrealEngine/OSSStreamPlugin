@@ -19,7 +19,8 @@
 
 AMenuOSSSteamCharacter::AMenuOSSSteamCharacter():
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
-	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionComplete))
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionComplete)),
+	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -179,6 +180,11 @@ void AMenuOSSSteamCharacter::CreateGameSession()
 	SessionSettings->bShouldAdvertise = true;
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->bUseLobbiesIfAvailable = true;
+	SessionSettings->Set(
+		FName("MatchType"), 
+		FString("tomneo2004_FreeForAll"),
+		EOnlineDataAdvertisementType::ViaOnlineServiceAndPing
+	);
 	
 	OnlineSessionInterface->CreateSession(
 		*LocalPlayer->GetPreferredUniqueNetId(),
@@ -218,6 +224,12 @@ void AMenuOSSSteamCharacter::OnCreateSessionComplete(FName SessionName, bool bWa
 				FString::Printf(TEXT("Create game session %s successful "), *SessionName.ToString())
 			);
 		}
+		
+		// Travel to lobby map
+		if (UWorld* World = GetWorld())
+		{
+			World->ServerTravel(FString("/Game/ThirdPerson/Lobby?listen"));
+		}
 	}
 	else
 	{
@@ -235,18 +247,78 @@ void AMenuOSSSteamCharacter::OnCreateSessionComplete(FName SessionName, bool bWa
 
 void AMenuOSSSteamCharacter::OnFindSessionComplete(bool bWasSuccessful)
 {
+	if (!OnlineSessionInterface.IsValid()) return;
+	
+	// Loop through each results
 	for (FOnlineSessionSearchResult& Result : SessionSearch->SearchResults)
 	{
 		FString Id = Result.GetSessionIdStr();
 		FString Username = Result.Session.OwningUserName;
+		FString MatchType;
+		
+		// Find match type
+		Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(
 				-1,
 				15.f,
 				FColor::Cyan,
-				FString::Printf(TEXT("ID: %s, User: %s"), *Id, *Username)
+				FString::Printf(TEXT("ID: %s, User: %s, MatchType: %s"), *Id, *Username, *MatchType)
 			);
+		}
+		
+		// If this is the match type we are looking for
+		if (MatchType == FString("tomneo2004_FreeForAll"))
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.f,
+					FColor::Cyan,
+					FString::Printf(TEXT("Join MatchType: %s"), *MatchType)
+				);
+			}
+			
+			// Join session
+			OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+			
+			ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+			OnlineSessionInterface->JoinSession(
+				*LocalPlayer->GetPreferredUniqueNetId(),
+				NAME_GameSession,
+				Result
+			);
+			return;
+		}
+	}
+}
+
+void AMenuOSSSteamCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!OnlineSessionInterface.IsValid()) return;
+	
+	FString Address;
+	
+	// Get session address
+	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Yellow,
+				FString::Printf(TEXT("Connect Session: %s"), *Address)
+			);
+		}
+		
+		// Travel to session
+		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+		if (PlayerController)
+		{
+			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 		}
 	}
 }
