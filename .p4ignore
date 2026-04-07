@@ -6,6 +6,7 @@ tmp
 
 # User-specific folders
 Binaries/
+Plugins/**/Binaries/
 DerivedDataCache/
 Intermediate/
 Saved/
