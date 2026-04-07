@@ -5,6 +5,7 @@ DerivedDataCache/*
 Intermediate/*
 Saved/*
 Binaries/*
+Plugins/**/Binaries/*
 Assets/*
 .idea/
 *.sln
