@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Menu.generated.h"
 
+class UMultiplayerSessionSubsystem;
+class UButton;
 /**
  * 
  */
@@ -17,4 +19,27 @@ class MULTIPLAYERSESSION_API UMenu : public UUserWidget
 public:
 	UFUNCTION(BlueprintCallable)
 	void MenuSetup();
+	
+protected:
+	virtual bool Initialize() override;
+	
+	UFUNCTION()
+	void HostButtonClicked();
+	
+	UFUNCTION()
+	void JoinButtonClicked();
+	
+private:
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> HostButton;
+	
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> JoinButton;
+
+	/**
+	 * A reference to multiplayer session subsystem
+	 * 
+	 * Note: this reference doesn't retain
+	 */
+	TWeakObjectPtr<UMultiplayerSessionSubsystem> MultiplayerSessionSubsystem;
 };
