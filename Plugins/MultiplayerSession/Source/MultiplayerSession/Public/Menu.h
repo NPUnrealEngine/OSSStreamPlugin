@@ -32,6 +32,10 @@ protected:
 	
 	void MenuTeardown();
 	
+protected: // callback functions
+	UFUNCTION()
+	void OnCreateSession(bool bWasSuccessful);
+	
 private:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UButton> HostButton;

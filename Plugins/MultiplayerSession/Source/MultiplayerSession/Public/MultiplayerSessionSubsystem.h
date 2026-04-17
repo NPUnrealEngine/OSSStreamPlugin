@@ -7,6 +7,9 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MultiplayerSessionSubsystem.generated.h"
 
+/* Custom delegates */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnCreateSessionComplete, bool, bWasSuccessful);
+
 /**
  * 
  */
@@ -17,6 +20,9 @@ class MULTIPLAYERSESSION_API UMultiplayerSessionSubsystem : public UGameInstance
 	
 public:
 	UMultiplayerSessionSubsystem();
+	
+public:
+	FMultiplayerOnCreateSessionComplete MultiplayerOnCreateSessionComplete;
 	
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -50,7 +56,7 @@ public:
 	 */
 	void StartSession();
 	
-protected:
+protected: // Callbacks for IOnlineSessionPtr
 	/**
 	 * Callback for creating a game session completed
 	 * @param SessionName 
