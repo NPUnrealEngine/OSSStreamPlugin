@@ -18,16 +18,19 @@ class MULTIPLAYERSESSION_API UMenu : public UUserWidget
 	
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup();
-	
+	void MenuSetup(int32 NumPublicConnections = 4, FString TypeOfMatch = FString(TEXT("tomneo2004_free_for_all")));
+
 protected:
-	virtual bool Initialize() override;
+	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
 	
 	UFUNCTION()
 	void HostButtonClicked();
 	
 	UFUNCTION()
 	void JoinButtonClicked();
+	
+	void MenuTeardown();
 	
 private:
 	UPROPERTY(meta=(BindWidget))
@@ -42,4 +45,7 @@ private:
 	 * Note: this reference doesn't retain
 	 */
 	TWeakObjectPtr<UMultiplayerSessionSubsystem> MultiplayerSessionSubsystem;
+	
+	int32 NumOfPublicConnections{4};
+	FString MatchType{TEXT("tomneo2004_free_for_all")};
 };

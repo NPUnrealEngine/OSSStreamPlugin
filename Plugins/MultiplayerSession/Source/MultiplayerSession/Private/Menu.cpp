@@ -6,8 +6,10 @@
 #include "MultiplayerSessionSubsystem.h"
 #include "Components/Button.h"
 
-void UMenu::MenuSetup()
+void UMenu::MenuSetup(int32 NumPublicConnections, FString TypeOfMatch)
 {
+	NumOfPublicConnections = NumPublicConnections;
+	MatchType = TypeOfMatch;
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	SetIsFocusable(true);
@@ -32,9 +34,9 @@ void UMenu::MenuSetup()
 	}
 }
 
-bool UMenu::Initialize()
+void UMenu::NativeOnInitialized()
 {
-	if (!Super::Initialize()) return false;
+	Super::NativeOnInitialized();
 	
 	if (HostButton)
 	{
@@ -44,7 +46,13 @@ bool UMenu::Initialize()
 	{
 		JoinButton->OnClicked.AddDynamic(this, &UMenu::JoinButtonClicked);
 	}
-	return true;
+}
+
+void UMenu::NativeDestruct()
+{
+	MenuTeardown();
+	
+	Super::NativeDestruct();
 }
 
 void UMenu::HostButtonClicked()
@@ -61,7 +69,13 @@ void UMenu::HostButtonClicked()
 	
 	if (MultiplayerSessionSubsystem.IsValid())
 	{
-		MultiplayerSessionSubsystem->CreateSession(4, "tomneo2004_free_for_all");
+		MultiplayerSessionSubsystem->CreateSession(NumOfPublicConnections, MatchType);
+		
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel("/Game/ThirdPerson/Lobby?listen");
+		}
 	}
 }
 
@@ -80,5 +94,21 @@ void UMenu::JoinButtonClicked()
 	if (MultiplayerSessionSubsystem.IsValid())
 	{
 		MultiplayerSessionSubsystem->FindSession();
+	}
+}
+
+void UMenu::MenuTeardown()
+{
+	RemoveFromParent();
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PC = World->GetFirstPlayerController();
+		if (PC)
+		{
+			FInputModeGameOnly InputModeData;
+			PC->SetInputMode(InputModeData);
+			PC->SetShowMouseCursor(false);
+		}
 	}
 }

@@ -84,6 +84,9 @@ protected:
 	 * @param bWasSuccessful 
 	 */
 	void OnStartSessionComplete(FName SessionName, bool bWasSuccessful);
+
+private:
+	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
 	
 private:
 	/**
