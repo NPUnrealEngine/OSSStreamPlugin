@@ -9,7 +9,10 @@
 
 /* Custom delegates */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnCreateSessionComplete, bool, bWasSuccessful);
-
+DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionsComplete, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerOnJoinSessionComplete, EOnJoinSessionCompleteResult::Type Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnDestroySessionComplete, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, bool, bWasSuccessful);
 /**
  * 
  */
@@ -21,8 +24,12 @@ class MULTIPLAYERSESSION_API UMultiplayerSessionSubsystem : public UGameInstance
 public:
 	UMultiplayerSessionSubsystem();
 	
-public:
+public: // Delegates
 	FMultiplayerOnCreateSessionComplete MultiplayerOnCreateSessionComplete;
+	FMultiplayerOnFindSessionsComplete MultiplayerOnFindSessionsComplete;
+	FMultiplayerOnJoinSessionComplete MultiplayerOnJoinSessionComplete;
+	FMultiplayerOnDestroySessionComplete MultiplayerOnDestroySessionComplete;
+	FMultiplayerOnStartSessionComplete MultiplayerOnStartSessionComplete;
 	
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -44,7 +51,7 @@ public:
 	 * Join a steam game session
 	 * @param SearchResult 
 	 */
-	void JoinSession(const FOnlineSessionSearchResult& SearchResult);
+	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 
 	/**
 	 * Destroy a steam game session
@@ -93,6 +100,7 @@ protected: // Callbacks for IOnlineSessionPtr
 
 private:
 	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
+	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 	
 private:
 	/**
